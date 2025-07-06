@@ -2,8 +2,6 @@
   "displayFieldName" : "",
   "fieldAliases" : {
     "OBJECTID_1" : "FID",
-    "FID_حدود_مدينة_الاقصر" : "FID_حدود_مدينة_الاقصر",
-    "OBJECTID" : "OBJECTID",
     "Dist_A_Nam" : "Dist_A_Nam",
     "Shape_Leng" : "Shape_Leng",
     "Shape_Length" : "Shape_Length"
@@ -18,16 +16,6 @@
       "name" : "OBJECTID_1",
       "type" : "esriFieldTypeOID",
       "alias" : "FID"
-    },
-    {
-      "name" : "FID_حدود_مدينة_الاقصر",
-      "type" : "esriFieldTypeInteger",
-      "alias" : "FID_حدود_مدينة_الاقصر"
-    },
-    {
-      "name" : "OBJECTID",
-      "type" : "esriFieldTypeInteger",
-      "alias" : "OBJECTID"
     },
     {
       "name" : "Dist_A_Nam",
@@ -50,8 +38,6 @@
     {
       "attributes" : {
         "OBJECTID_1" : 1,
-        "FID_حدود_مدينة_الاقصر" : 0,
-        "OBJECTID" : 78,
         "Dist_A_Nam" : "قسم الأقصر",
         "Shape_Leng" : 39586.484244699997,
         "Shape_Length" : 39586.484244653388
