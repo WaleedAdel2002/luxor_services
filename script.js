@@ -188,7 +188,7 @@ function displayServicePoints(filterValue) {
 
 
 async function loadMap() {
-    map = L.map('map').setView([25.696, 32.664], 14);
+    map = L.map('map').setView([25.696, 32.664], 13);
 
     const osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
