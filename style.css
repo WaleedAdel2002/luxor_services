@@ -233,17 +233,17 @@ header {
 
 #info {
     background-color: #fff;
-    padding: 15px;
+    padding: 5px;
     border-radius: 5px;
     box-shadow: 0 2px 5px rgba(0,0,0,0.1);
     margin-top: auto; /* يدفع صندوق المعلومات إلى الأسفل */
     text-align: right; /* محاذاة النص لليمين */
     overflow-y: auto; /* إضافة شريط تمرير إذا كان المحتوى كبيراً */
-    max-height: 250px; /* تعيين ارتفاع أقصى */
+    max-height: 400px; /* تعيين ارتفاع أقصى */
 }
 
 #info table {
-    width: 150%;
+    width: 100%;
     border-collapse: collapse;
     margin-top: 10px;
     font-size: 0.9em;
