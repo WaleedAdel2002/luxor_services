@@ -46,6 +46,140 @@ const serviceIconMap = {
     // أضف المزيد من الأنواع هنا مع مسارات صورك المحلية أو الألوان
 };
 
+
+
+// ... (الكود الحالي الخاص بك) ...
+
+let servicePoints = []; // تأكد من أن هذا المتغير موجود ومتاح عالميًا
+let allSearchableTerms = new Set(); // لجمع جميع المصطلحات الفريدة للبحث عنها كاقتراحات
+
+// ... (داخل دالة loadMap بعد تحميل servicesData) ...
+
+    const typesSet = new Set();
+    servicePoints = servicesData.features.map(f => {
+        let coord;
+        if (f.geometry.coordinates) {
+            coord = f.geometry.coordinates;
+        } else if (f.geometry.x && f.geometry.y) {
+            coord = [f.geometry.x, f.geometry.y];
+        }
+        const props = f.attributes || f.properties;
+        const name = props?.Name || "خدمة";
+        const type = props?.type || "غير معروف";
+        const latlng = [coord[1], coord[0]];
+        typesSet.add(type);
+
+        // أضف اسم الخدمة ونوعها إلى قائمة المصطلحات القابلة للبحث
+        allSearchableTerms.add(name.toLowerCase());
+        allSearchableTerms.add(type.toLowerCase());
+        
+        const marker = L.marker(latlng, { icon: getServiceIcon(type) }).bindPopup(name);
+        marker.on('click', function() {
+            displayFeatureInfo(props, `معلومات الخدمة: ${name}`);
+        });
+        return { coord: latlng, name, type, marker: marker };
+    });
+
+    // ... (بقية كود loadMap) ...
+
+
+// دالة جديدة لتحديث الاقتراحات
+function updateSuggestions() {
+    const searchInput = document.getElementById('searchInput');
+    const searchTerm = searchInput.value.toLowerCase();
+    let suggestionsContainer = document.getElementById('suggestions-container');
+
+    // إذا لم يكن هناك حاوية للاقتراحات، قم بإنشائها
+    if (!suggestionsContainer) {
+        suggestionsContainer = document.createElement('div');
+        suggestionsContainer.id = 'suggestions-container';
+        // أضف بعض الأنماط الأساسية لهذه الحاوية في CSS
+        // style.css ستحتاج إلى:
+        // #suggestions-container {
+        //     border: 1px solid #ccc;
+        //     max-height: 150px;
+        //     overflow-y: auto;
+        //     background-color: white;
+        //     position: absolute; // لجعلها تظهر فوق العناصر الأخرى
+        //     width: calc(100% - 20px); // نفس عرض حقل البحث تقريباً
+        //     z-index: 1001; // تأكد أنها تظهر فوق كل شيء آخر
+        //     border-top: none;
+        //     border-radius: 0 0 4px 4px;
+        // }
+        // .suggestion-item {
+        //     padding: 8px;
+        //     cursor: pointer;
+        // }
+        // .suggestion-item:hover {
+        //     background-color: #f0f0f0;
+        // }
+        searchInput.parentNode.insertBefore(suggestionsContainer, searchInput.nextSibling);
+    }
+
+    suggestionsContainer.innerHTML = ''; // مسح الاقتراحات القديمة
+
+    if (searchTerm.length === 0) {
+        suggestionsContainer.style.display = 'none'; // إخفاء الحاوية إذا كان حقل البحث فارغًا
+        return;
+    }
+
+    const filteredSuggestions = Array.from(allSearchableTerms).filter(term =>
+        term.startsWith(searchTerm)
+    ).slice(0, 5); // عرض 5 اقتراحات فقط
+
+    if (filteredSuggestions.length > 0) {
+        suggestionsContainer.style.display = 'block';
+        filteredSuggestions.forEach(suggestion => {
+            const suggestionItem = document.createElement('div');
+            suggestionItem.classList.add('suggestion-item');
+            suggestionItem.textContent = suggestion;
+            suggestionItem.addEventListener('click', () => {
+                searchInput.value = suggestion;
+                suggestionsContainer.style.display = 'none';
+                searchServices(); // قم بتشغيل البحث فورًا عند اختيار الاقتراح
+            });
+            suggestionsContainer.appendChild(suggestionItem);
+        });
+    } else {
+        suggestionsContainer.style.display = 'none';
+    }
+}
+
+
+// ... (داخل document.addEventListener('DOMContentLoaded', ...) ) ...
+
+    document.getElementById('searchBtn').addEventListener('click', searchServices);
+
+    const searchInput = document.getElementById('searchInput');
+    searchInput.addEventListener('input', updateSuggestions); // استدعاء الدالة عند كل تغيير في الإدخال
+
+    searchInput.addEventListener('keyup', (event) => {
+        if (event.key === 'Enter') {
+            searchServices();
+            document.getElementById('suggestions-container').style.display = 'none'; // إخفاء الاقتراحات بعد البحث
+        } else if (event.key === 'Escape' || searchInput.value === '') {
+            const typeFilterSelect = document.getElementById("typeFilter");
+            displayServicePoints(typeFilterSelect.value);
+            document.getElementById('info').textContent = 'جارٍ تحميل الخريطة...';
+            routeLayer.clearLayers();
+            if (destinationMarker) map.removeLayer(destinationMarker);
+            document.getElementById('suggestions-container').style.display = 'none'; // إخفاء الاقتراحات عند مسح البحث أو Esc
+        }
+    });
+
+    // إضافة مستمع لغلق الاقتراحات عند النقر خارجها
+    document.addEventListener('click', (event) => {
+        const suggestionsContainer = document.getElementById('suggestions-container');
+        if (suggestionsContainer && !searchInput.contains(event.target) && !suggestionsContainer.contains(event.target)) {
+            suggestionsContainer.style.display = 'none';
+        }
+    });
+
+// ... (بقية الكود) ...
+
+
+
+
 function getRoadColor(fclass) {
     // قم بتحويل fclass إلى أحرف صغيرة للتأكد من المطابقة مع المفاتيح أدناه
     const lowerFclass = fclass.toLowerCase();
@@ -188,7 +322,7 @@ function displayServicePoints(filterValue) {
 
 
 async function loadMap() {
-    map = L.map('map').setView([25.696, 32.664], 13);
+    map = L.map('map').setView([25.696, 32.664], 12);
 
     const osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'

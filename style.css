@@ -282,3 +282,46 @@ header {
     background-color: rgba(0, 0, 0, 0.5);
     z-index: 999;
 }
+/* ... (الأنماط الحالية الخاصة بك) ... */
+
+#search-container {
+    margin-bottom: 20px;
+    background-color: #e9ecef;
+    padding: 10px;
+    border-radius: 5px;
+    display: flex;
+    align-items: center;
+    position: relative; /* مهم لتموضع الاقتراحات المطلق */
+}
+
+#searchInput {
+    /* ... (الأنماط الحالية) ... */
+    margin-left: 10px;
+}
+
+#suggestions-container {
+    border: 1px solid #ccc;
+    max-height: 150px;
+    overflow-y: auto;
+    background-color: white;
+    position: absolute; /* لجعلها تظهر فوق العناصر الأخرى */
+    width: calc(100% - 20px); /* نفس عرض حقل البحث تقريباً (مع الأخذ في الاعتبار الـ padding) */
+    z-index: 1001; /* تأكد أنها تظهر فوق كل شيء آخر */
+    border-top: none;
+    border-radius: 0 0 4px 4px;
+    top: 100%; /* وضعها أسفل حقل البحث مباشرة */
+    left: 10px; /* محاذاتها مع حقل البحث */
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1); /* لإضافة ظل خفيف */
+    display: none; /* إخفاؤها مبدئيًا */
+}
+
+.suggestion-item {
+    padding: 8px;
+    cursor: pointer;
+    text-align: right; /* محاذاة النص لليمين للغة العربية */
+    direction: rtl; /* دعم اللغة العربية */
+}
+
+.suggestion-item:hover {
+    background-color: #f0f0f0;
+}
