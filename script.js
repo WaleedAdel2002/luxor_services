@@ -15,9 +15,6 @@ let borderLayer = L.layerGroup();
 let userMarker = null;
 let destinationMarker = null;
 
-// متغير جديد لجمع جميع المصطلحات الفريدة للبحث عنها كاقتراحات
-let allSearchableTerms = new Set();
-
 const greenIcon = L.icon({
     iconUrl: 'https://cdn.jsdelivr.net/gh/pointhi/leaflet-color-markers@master/img/marker-icon-green.png',
     iconSize: [25, 41],
@@ -80,6 +77,7 @@ function getRoadColor(fclass) {
     }
 }
 
+
 function getServiceIcon(type) {
     const iconConfig = serviceIconMap[type];
     let iconUrl;
@@ -115,8 +113,8 @@ function formatTime(minutes) {
     return parts.join(" و ");
 }
 
-function formatDistance(metersInput) { // غيرنا اسم المتغير ليكون أوضح
-    const meters = Math.round(metersInput); // الآن هي قيمة بالمتر بالفعل، فقط نقوم بتقريبها
+function formatDistance(km) {
+    const meters = Math.round(km * 1000);
     const kmPart = Math.floor(meters / 1000);
     const mPart = meters % 1000;
     let parts = [];
@@ -186,88 +184,6 @@ function displayServicePoints(filterValue) {
             s.marker.addTo(servicePointsLayer);
         }
     });
-}
-
-// دالة البحث عن الخدمات (مُعدلة لإخفاء الاقتراحات)
-function searchServices() {
-    const searchTerm = document.getElementById('searchInput').value.toLowerCase();
-    servicePointsLayer.clearLayers(); // قم بمسح الطبقة الحالية من نقاط الخدمة
-
-    servicePoints.forEach(s => {
-        // ابحث في اسم الخدمة ونوعها
-        const nameMatches = s.name.toLowerCase().includes(searchTerm);
-        const typeMatches = s.type.toLowerCase().includes(searchTerm);
-
-        if (nameMatches || typeMatches) {
-            s.marker.addTo(servicePointsLayer);
-        }
-    });
-
-    // إذا كان هناك بحث، قم بتحديث عنصر التحكم في التصفية ليُظهر "الكل" أو "نتائج البحث"
-    const typeFilterSelect = document.getElementById('typeFilter');
-    if (searchTerm) {
-        typeFilterSelect.value = "all"; // إعادة تعيين الفلتر إذا تم البحث
-    } else {
-        // إذا كان شريط البحث فارغاً، أعد عرض جميع النقاط بناءً على الفلتر الحالي
-        displayServicePoints(typeFilterSelect.value);
-    }
-
-    // قم بتحديث معلومات الشريط الجانبي بناءً على نتائج البحث
-    if (servicePointsLayer.getLayers().length > 0) {
-        document.getElementById('info').innerHTML = `<h4>نتائج البحث:</h4><p>تم العثور على ${servicePointsLayer.getLayers().length} نقطة خدمة مطابقة لبحثك.</p>`;
-    } else {
-        document.getElementById('info').innerHTML = `<h4>نتائج البحث:</h4><p>لم يتم العثور على أي نقطة خدمة مطابقة لبحثك.</p>`;
-    }
-    routeLayer.clearLayers(); // امسح أي مسار حالي
-    if (destinationMarker) map.removeLayer(destinationMarker);
-
-    // إخفاء الاقتراحات بعد إجراء البحث
-    const suggestionsContainer = document.getElementById('suggestions-container');
-    if (suggestionsContainer) {
-        suggestionsContainer.style.display = 'none';
-    }
-}
-
-// دالة جديدة لتحديث الاقتراحات
-function updateSuggestions() {
-    const searchInput = document.getElementById('searchInput');
-    const searchTerm = searchInput.value.toLowerCase();
-    let suggestionsContainer = document.getElementById('suggestions-container');
-
-    // إذا لم يكن هناك حاوية للاقتراحات، قم بإنشائها
-    if (!suggestionsContainer) {
-        suggestionsContainer = document.createElement('div');
-        suggestionsContainer.id = 'suggestions-container';
-        searchInput.parentNode.insertBefore(suggestionsContainer, searchInput.nextSibling);
-    }
-
-    suggestionsContainer.innerHTML = ''; // مسح الاقتراحات القديمة
-
-    if (searchTerm.length === 0) {
-        suggestionsContainer.style.display = 'none'; // إخفاء الحاوية إذا كان حقل البحث فارغًا
-        return;
-    }
-
-    const filteredSuggestions = Array.from(allSearchableTerms).filter(term =>
-        term.startsWith(searchTerm)
-    ).slice(0, 5); // عرض 5 اقتراحات فقط
-
-    if (filteredSuggestions.length > 0) {
-        suggestionsContainer.style.display = 'block';
-        filteredSuggestions.forEach(suggestion => {
-            const suggestionItem = document.createElement('div');
-            suggestionItem.classList.add('suggestion-item');
-            suggestionItem.textContent = suggestion;
-            suggestionItem.addEventListener('click', () => {
-                searchInput.value = suggestion;
-                suggestionsContainer.style.display = 'none';
-                searchServices(); // قم بتشغيل البحث فورًا عند اختيار الاقتراح
-            });
-            suggestionsContainer.appendChild(suggestionItem);
-        });
-    } else {
-        suggestionsContainer.style.display = 'none';
-    }
 }
 
 
@@ -368,10 +284,6 @@ async function loadMap() {
         const latlng = [coord[1], coord[0]];
         typesSet.add(type);
 
-        // أضف اسم الخدمة ونوعها إلى قائمة المصطلحات القابلة للبحث
-        allSearchableTerms.add(name.toLowerCase());
-        allSearchableTerms.add(type.toLowerCase());
-        
         const marker = L.marker(latlng, { icon: getServiceIcon(type) }).bindPopup(name);
         marker.on('click', function() {
             displayFeatureInfo(props, `معلومات الخدمة: ${name}`);
@@ -389,11 +301,8 @@ async function loadMap() {
 
     displayServicePoints('all');
 
-    // تم تعديل مستمع حدث "typeFilter" لكي لا يتعارض مع البحث
-    // اجعل هذا المستمع يستدعي displayServicePoints مباشرة
-    document.getElementById("typeFilter").addEventListener("change", () => {
+    typeSelect.addEventListener("change", () => {
         const selectedType = document.getElementById("typeFilter").value;
-        document.getElementById('searchInput').value = ''; // مسح حقل البحث عند تغيير الفلتر
         displayServicePoints(selectedType);
         if (userLat && userLng) {
             runRouting();
@@ -545,81 +454,6 @@ document.getElementById("locateBtn").addEventListener("click", () => {
         console.error("خطأ في تحديد الموقع:", error);
         document.getElementById('info').textContent = 'تعذر تحديد موقعك. يرجى التأكد من تفعيل خدمات الموقع.';
     });
-});
-
-// إضافة مستمعي الأحداث لزر البحث وحقل الإدخال عند تحميل DOM
-document.addEventListener('DOMContentLoaded', () => {
-    document.getElementById('searchBtn').addEventListener('click', searchServices);
-
-    const searchInput = document.getElementById('searchInput');
-    searchInput.addEventListener('input', updateSuggestions); // استدعاء الدالة عند كل تغيير في الإدخال
-
-    searchInput.addEventListener('keyup', (event) => {
-        if (event.key === 'Enter') {
-            searchServices();
-            // إخفاء الاقتراحات بعد البحث بالضغط على Enter
-            const suggestionsContainer = document.getElementById('suggestions-container');
-            if (suggestionsContainer) {
-                suggestionsContainer.style.display = 'none';
-            }
-        } else if (event.key === 'Escape' || searchInput.value === '') {
-            // إذا ضغط المستخدم على Esc أو مسح حقل البحث، أعد عرض جميع نقاط الخدمة
-            const typeFilterSelect = document.getElementById("typeFilter");
-            displayServicePoints(typeFilterSelect.value);
-            document.getElementById('info').textContent = 'جارٍ تحميل الخريطة...'; // أو رسالة افتراضية أخرى
-            routeLayer.clearLayers();
-            if (destinationMarker) map.removeLayer(destinationMarker);
-            // إخفاء الاقتراحات عند مسح البحث أو Esc
-            const suggestionsContainer = document.getElementById('suggestions-container');
-            if (suggestionsContainer) {
-                suggestionsContainer.style.display = 'none';
-            }
-        }
-    });
-
-    // إضافة مستمع لغلق الاقتراحات عند النقر خارجها
-    document.addEventListener('click', (event) => {
-        const suggestionsContainer = document.getElementById('suggestions-container');
-        if (suggestionsContainer && !searchInput.contains(event.target) && !suggestionsContainer.contains(event.target)) {
-            suggestionsContainer.style.display = 'none';
-        }
-    });
-
-    // منطق التمدد والانقباض للأكورديون
-    const accordionHeaders = document.querySelectorAll('.accordion-header');
-
-    accordionHeaders.forEach(header => {
-        header.addEventListener('click', () => {
-            const content = header.nextElementSibling; // المحتوى هو العنصر التالي للهيدر
-            const toggleIcon = header.querySelector('.toggle-icon');
-
-            // إغلاق جميع الأقسام الأخرى باستثناء القسم الحالي
-            accordionHeaders.forEach(otherHeader => {
-                if (otherHeader !== header) {
-                    otherHeader.classList.remove('active');
-                    otherHeader.nextElementSibling.style.display = 'none';
-                    otherHeader.querySelector('.toggle-icon').style.transform = 'rotate(0deg)';
-                }
-            });
-
-            // تبديل حالة القسم الحالي
-            header.classList.toggle('active');
-            if (content.style.display === 'block') {
-                content.style.display = 'none';
-                toggleIcon.style.transform = 'rotate(0deg)';
-            } else {
-                content.style.display = 'block';
-                toggleIcon.style.transform = 'rotate(180deg)'; // تدوير السهم
-            }
-        });
-    });
-
-    // اختياري: افتح القسم الأول (البحث عن خدمة) عند التحميل
-    // يمكنك تعديل هذا ليناسب تفضيلاتك
-    const searchHeader = document.getElementById('searchHeader');
-    if (searchHeader) {
-        searchHeader.click(); // يحاكي النقر لفتحها
-    }
 });
 
 
