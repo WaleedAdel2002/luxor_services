@@ -54,6 +54,55 @@
     flex-grow: 1; /* السماح للنص بأخذ المساحة المتاحة */
 }
 
+/* أنماط Accordion الجديدة */
+.accordion-item {
+    margin-bottom: 10px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    overflow: hidden; /* لضمان أن المحتوى المخفي لا يفيض */
+    background-color: #f8f9fa;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.accordion-header {
+    background-color: #e9ecef;
+    padding: 10px 15px;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-weight: bold;
+    color: #333;
+    border-bottom: 1px solid #dee2e6; /* فاصل بين الهيدر والمحتوى */
+}
+
+.accordion-header:hover {
+    background-color: #dee2e6;
+}
+
+.accordion-header h4 {
+    margin: 0;
+    font-size: 1.1em;
+    flex-grow: 1; /* لجعل العنوان يأخذ المساحة المتاحة */
+}
+
+.toggle-icon {
+    font-size: 1.2em;
+    transition: transform 0.3s ease;
+    margin-right: 10px; /* مسافة بين النص والأيقونة */
+}
+
+.accordion-header.active .toggle-icon {
+    transform: rotate(180deg); /* تدوير السهم عند الفتح */
+}
+
+.accordion-content {
+    padding: 15px;
+    background-color: #ffffff;
+    display: none; /* إخفاء المحتوى افتراضياً */
+    border-top: none; /* إزالة الحد العلوي */
+}
+
 /* بقية أكواد CSS الخاصة بك كما هي */
 body {
   margin: 0;
@@ -137,12 +186,33 @@ header {
     background-color: #0056b3;
 }
 
+/* قم بإلغاء تعليق أو حذف أنماط #filter-container و #map-controls و #search-container القديمة
+   لأن Accordion-item و accordion-content سيتوليان التنسيق الآن. */
+/*
 #filter-container {
     margin-bottom: 20px;
     background-color: #e9ecef;
     padding: 10px;
     border-radius: 5px;
 }
+
+#map-controls {
+  background-color: #e9ecef;
+  padding: 10px;
+  border-radius: 5px;
+  margin-bottom: 20px;
+}
+
+#search-container {
+    margin-bottom: 20px;
+    background-color: #e9ecef;
+    padding: 10px;
+    border-radius: 5px;
+    display: flex;
+    align-items: center;
+    position: relative;
+}
+*/
 
 #filter-container label {
     display: block;
@@ -190,12 +260,6 @@ header {
     font-weight: bold;
 }
 
-#map-controls {
-  background-color: #e9ecef;
-  padding: 10px;
-  border-radius: 5px;
-  margin-bottom: 20px;
-}
 
 #map-controls h4 {
   margin-top: 0;
@@ -282,21 +346,34 @@ header {
     background-color: rgba(0, 0, 0, 0.5);
     z-index: 999;
 }
-/* ... (الأنماط الحالية الخاصة بك) ... */
 
-#search-container {
-    margin-bottom: 20px;
-    background-color: #e9ecef;
-    padding: 10px;
-    border-radius: 5px;
-    display: flex;
-    align-items: center;
-    position: relative; /* مهم لتموضع الاقتراحات المطلق */
+/* أنماط الاكمال التلقائي */
+#searchInput {
+    width: calc(100% - 70px); /* Adjust width to fit button and padding */
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 1rem;
+    background-color: #fff;
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
+    direction: rtl; /* دعم اللغة العربية */
+    text-align: right; /* محاذاة النص لليمين */
 }
 
-#searchInput {
-    /* ... (الأنماط الحالية) ... */
-    margin-left: 10px;
+#searchBtn {
+    padding: 8px 12px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: background-color 0.3s ease;
+    margin-right: 10px; /* مسافة بين حقل البحث والزر */
+}
+
+#searchBtn:hover {
+    background-color: #0056b3;
 }
 
 #suggestions-container {
@@ -305,12 +382,12 @@ header {
     overflow-y: auto;
     background-color: white;
     position: absolute; /* لجعلها تظهر فوق العناصر الأخرى */
-    width: calc(100% - 20px); /* نفس عرض حقل البحث تقريباً (مع الأخذ في الاعتبار الـ padding) */
+    width: calc(100% - 30px); /* نفس عرض حقل البحث تقريباً (مع الأخذ في الاعتبار الـ padding) */
     z-index: 1001; /* تأكد أنها تظهر فوق كل شيء آخر */
     border-top: none;
     border-radius: 0 0 4px 4px;
-    top: 100%; /* وضعها أسفل حقل البحث مباشرة */
-    left: 10px; /* محاذاتها مع حقل البحث */
+    top: auto; /* إزالة top: 100% لأنها ستكون ضمن accordion-content */
+    left: 15px; /* محاذاتها مع حقل البحث بناءً على padding الأب */
     box-shadow: 0 2px 5px rgba(0,0,0,0.1); /* لإضافة ظل خفيف */
     display: none; /* إخفاؤها مبدئيًا */
 }

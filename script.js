@@ -15,6 +15,9 @@ let borderLayer = L.layerGroup();
 let userMarker = null;
 let destinationMarker = null;
 
+// متغير جديد لجمع جميع المصطلحات الفريدة للبحث عنها كاقتراحات
+let allSearchableTerms = new Set();
+
 const greenIcon = L.icon({
     iconUrl: 'https://cdn.jsdelivr.net/gh/pointhi/leaflet-color-markers@master/img/marker-icon-green.png',
     iconSize: [25, 41],
@@ -76,7 +79,6 @@ function getRoadColor(fclass) {
             return 'gray'; // رمادي افتراضي لأي فئة غير معروفة
     }
 }
-
 
 function getServiceIcon(type) {
     const iconConfig = serviceIconMap[type];
@@ -225,10 +227,6 @@ function searchServices() {
         suggestionsContainer.style.display = 'none';
     }
 }
-
-
-// متغير جديد لجمع جميع المصطلحات الفريدة للبحث عنها كاقتراحات
-let allSearchableTerms = new Set();
 
 // دالة جديدة لتحديث الاقتراحات
 function updateSuggestions() {
@@ -559,7 +557,11 @@ document.addEventListener('DOMContentLoaded', () => {
     searchInput.addEventListener('keyup', (event) => {
         if (event.key === 'Enter') {
             searchServices();
-            document.getElementById('suggestions-container').style.display = 'none'; // إخفاء الاقتراحات بعد البحث
+            // إخفاء الاقتراحات بعد البحث بالضغط على Enter
+            const suggestionsContainer = document.getElementById('suggestions-container');
+            if (suggestionsContainer) {
+                suggestionsContainer.style.display = 'none';
+            }
         } else if (event.key === 'Escape' || searchInput.value === '') {
             // إذا ضغط المستخدم على Esc أو مسح حقل البحث، أعد عرض جميع نقاط الخدمة
             const typeFilterSelect = document.getElementById("typeFilter");
@@ -567,7 +569,11 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('info').textContent = 'جارٍ تحميل الخريطة...'; // أو رسالة افتراضية أخرى
             routeLayer.clearLayers();
             if (destinationMarker) map.removeLayer(destinationMarker);
-            document.getElementById('suggestions-container').style.display = 'none'; // إخفاء الاقتراحات عند مسح البحث أو Esc
+            // إخفاء الاقتراحات عند مسح البحث أو Esc
+            const suggestionsContainer = document.getElementById('suggestions-container');
+            if (suggestionsContainer) {
+                suggestionsContainer.style.display = 'none';
+            }
         }
     });
 
@@ -579,6 +585,41 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    // منطق التمدد والانقباض للأكورديون
+    const accordionHeaders = document.querySelectorAll('.accordion-header');
+
+    accordionHeaders.forEach(header => {
+        header.addEventListener('click', () => {
+            const content = header.nextElementSibling; // المحتوى هو العنصر التالي للهيدر
+            const toggleIcon = header.querySelector('.toggle-icon');
+
+            // إغلاق جميع الأقسام الأخرى باستثناء القسم الحالي
+            accordionHeaders.forEach(otherHeader => {
+                if (otherHeader !== header) {
+                    otherHeader.classList.remove('active');
+                    otherHeader.nextElementSibling.style.display = 'none';
+                    otherHeader.querySelector('.toggle-icon').style.transform = 'rotate(0deg)';
+                }
+            });
+
+            // تبديل حالة القسم الحالي
+            header.classList.toggle('active');
+            if (content.style.display === 'block') {
+                content.style.display = 'none';
+                toggleIcon.style.transform = 'rotate(0deg)';
+            } else {
+                content.style.display = 'block';
+                toggleIcon.style.transform = 'rotate(180deg)'; // تدوير السهم
+            }
+        });
+    });
+
+    // اختياري: افتح القسم الأول (البحث عن خدمة) عند التحميل
+    // يمكنك تعديل هذا ليناسب تفضيلاتك
+    const searchHeader = document.getElementById('searchHeader');
+    if (searchHeader) {
+        searchHeader.click(); // يحاكي النقر لفتحها
+    }
 });
 
 
