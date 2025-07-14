@@ -46,140 +46,6 @@ const serviceIconMap = {
     // أضف المزيد من الأنواع هنا مع مسارات صورك المحلية أو الألوان
 };
 
-
-
-// ... (الكود الحالي الخاص بك) ...
-
-let servicePoints = []; // تأكد من أن هذا المتغير موجود ومتاح عالميًا
-let allSearchableTerms = new Set(); // لجمع جميع المصطلحات الفريدة للبحث عنها كاقتراحات
-
-// ... (داخل دالة loadMap بعد تحميل servicesData) ...
-
-    const typesSet = new Set();
-    servicePoints = servicesData.features.map(f => {
-        let coord;
-        if (f.geometry.coordinates) {
-            coord = f.geometry.coordinates;
-        } else if (f.geometry.x && f.geometry.y) {
-            coord = [f.geometry.x, f.geometry.y];
-        }
-        const props = f.attributes || f.properties;
-        const name = props?.Name || "خدمة";
-        const type = props?.type || "غير معروف";
-        const latlng = [coord[1], coord[0]];
-        typesSet.add(type);
-
-        // أضف اسم الخدمة ونوعها إلى قائمة المصطلحات القابلة للبحث
-        allSearchableTerms.add(name.toLowerCase());
-        allSearchableTerms.add(type.toLowerCase());
-        
-        const marker = L.marker(latlng, { icon: getServiceIcon(type) }).bindPopup(name);
-        marker.on('click', function() {
-            displayFeatureInfo(props, `معلومات الخدمة: ${name}`);
-        });
-        return { coord: latlng, name, type, marker: marker };
-    });
-
-    // ... (بقية كود loadMap) ...
-
-
-// دالة جديدة لتحديث الاقتراحات
-function updateSuggestions() {
-    const searchInput = document.getElementById('searchInput');
-    const searchTerm = searchInput.value.toLowerCase();
-    let suggestionsContainer = document.getElementById('suggestions-container');
-
-    // إذا لم يكن هناك حاوية للاقتراحات، قم بإنشائها
-    if (!suggestionsContainer) {
-        suggestionsContainer = document.createElement('div');
-        suggestionsContainer.id = 'suggestions-container';
-        // أضف بعض الأنماط الأساسية لهذه الحاوية في CSS
-        // style.css ستحتاج إلى:
-        // #suggestions-container {
-        //     border: 1px solid #ccc;
-        //     max-height: 150px;
-        //     overflow-y: auto;
-        //     background-color: white;
-        //     position: absolute; // لجعلها تظهر فوق العناصر الأخرى
-        //     width: calc(100% - 20px); // نفس عرض حقل البحث تقريباً
-        //     z-index: 1001; // تأكد أنها تظهر فوق كل شيء آخر
-        //     border-top: none;
-        //     border-radius: 0 0 4px 4px;
-        // }
-        // .suggestion-item {
-        //     padding: 8px;
-        //     cursor: pointer;
-        // }
-        // .suggestion-item:hover {
-        //     background-color: #f0f0f0;
-        // }
-        searchInput.parentNode.insertBefore(suggestionsContainer, searchInput.nextSibling);
-    }
-
-    suggestionsContainer.innerHTML = ''; // مسح الاقتراحات القديمة
-
-    if (searchTerm.length === 0) {
-        suggestionsContainer.style.display = 'none'; // إخفاء الحاوية إذا كان حقل البحث فارغًا
-        return;
-    }
-
-    const filteredSuggestions = Array.from(allSearchableTerms).filter(term =>
-        term.startsWith(searchTerm)
-    ).slice(0, 5); // عرض 5 اقتراحات فقط
-
-    if (filteredSuggestions.length > 0) {
-        suggestionsContainer.style.display = 'block';
-        filteredSuggestions.forEach(suggestion => {
-            const suggestionItem = document.createElement('div');
-            suggestionItem.classList.add('suggestion-item');
-            suggestionItem.textContent = suggestion;
-            suggestionItem.addEventListener('click', () => {
-                searchInput.value = suggestion;
-                suggestionsContainer.style.display = 'none';
-                searchServices(); // قم بتشغيل البحث فورًا عند اختيار الاقتراح
-            });
-            suggestionsContainer.appendChild(suggestionItem);
-        });
-    } else {
-        suggestionsContainer.style.display = 'none';
-    }
-}
-
-
-// ... (داخل document.addEventListener('DOMContentLoaded', ...) ) ...
-
-    document.getElementById('searchBtn').addEventListener('click', searchServices);
-
-    const searchInput = document.getElementById('searchInput');
-    searchInput.addEventListener('input', updateSuggestions); // استدعاء الدالة عند كل تغيير في الإدخال
-
-    searchInput.addEventListener('keyup', (event) => {
-        if (event.key === 'Enter') {
-            searchServices();
-            document.getElementById('suggestions-container').style.display = 'none'; // إخفاء الاقتراحات بعد البحث
-        } else if (event.key === 'Escape' || searchInput.value === '') {
-            const typeFilterSelect = document.getElementById("typeFilter");
-            displayServicePoints(typeFilterSelect.value);
-            document.getElementById('info').textContent = 'جارٍ تحميل الخريطة...';
-            routeLayer.clearLayers();
-            if (destinationMarker) map.removeLayer(destinationMarker);
-            document.getElementById('suggestions-container').style.display = 'none'; // إخفاء الاقتراحات عند مسح البحث أو Esc
-        }
-    });
-
-    // إضافة مستمع لغلق الاقتراحات عند النقر خارجها
-    document.addEventListener('click', (event) => {
-        const suggestionsContainer = document.getElementById('suggestions-container');
-        if (suggestionsContainer && !searchInput.contains(event.target) && !suggestionsContainer.contains(event.target)) {
-            suggestionsContainer.style.display = 'none';
-        }
-    });
-
-// ... (بقية الكود) ...
-
-
-
-
 function getRoadColor(fclass) {
     // قم بتحويل fclass إلى أحرف صغيرة للتأكد من المطابقة مع المفاتيح أدناه
     const lowerFclass = fclass.toLowerCase();
@@ -320,6 +186,92 @@ function displayServicePoints(filterValue) {
     });
 }
 
+// دالة البحث عن الخدمات (مُعدلة لإخفاء الاقتراحات)
+function searchServices() {
+    const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+    servicePointsLayer.clearLayers(); // قم بمسح الطبقة الحالية من نقاط الخدمة
+
+    servicePoints.forEach(s => {
+        // ابحث في اسم الخدمة ونوعها
+        const nameMatches = s.name.toLowerCase().includes(searchTerm);
+        const typeMatches = s.type.toLowerCase().includes(searchTerm);
+
+        if (nameMatches || typeMatches) {
+            s.marker.addTo(servicePointsLayer);
+        }
+    });
+
+    // إذا كان هناك بحث، قم بتحديث عنصر التحكم في التصفية ليُظهر "الكل" أو "نتائج البحث"
+    const typeFilterSelect = document.getElementById('typeFilter');
+    if (searchTerm) {
+        typeFilterSelect.value = "all"; // إعادة تعيين الفلتر إذا تم البحث
+    } else {
+        // إذا كان شريط البحث فارغاً، أعد عرض جميع النقاط بناءً على الفلتر الحالي
+        displayServicePoints(typeFilterSelect.value);
+    }
+
+    // قم بتحديث معلومات الشريط الجانبي بناءً على نتائج البحث
+    if (servicePointsLayer.getLayers().length > 0) {
+        document.getElementById('info').innerHTML = `<h4>نتائج البحث:</h4><p>تم العثور على ${servicePointsLayer.getLayers().length} نقطة خدمة مطابقة لبحثك.</p>`;
+    } else {
+        document.getElementById('info').innerHTML = `<h4>نتائج البحث:</h4><p>لم يتم العثور على أي نقطة خدمة مطابقة لبحثك.</p>`;
+    }
+    routeLayer.clearLayers(); // امسح أي مسار حالي
+    if (destinationMarker) map.removeLayer(destinationMarker);
+
+    // إخفاء الاقتراحات بعد إجراء البحث
+    const suggestionsContainer = document.getElementById('suggestions-container');
+    if (suggestionsContainer) {
+        suggestionsContainer.style.display = 'none';
+    }
+}
+
+
+// متغير جديد لجمع جميع المصطلحات الفريدة للبحث عنها كاقتراحات
+let allSearchableTerms = new Set();
+
+// دالة جديدة لتحديث الاقتراحات
+function updateSuggestions() {
+    const searchInput = document.getElementById('searchInput');
+    const searchTerm = searchInput.value.toLowerCase();
+    let suggestionsContainer = document.getElementById('suggestions-container');
+
+    // إذا لم يكن هناك حاوية للاقتراحات، قم بإنشائها
+    if (!suggestionsContainer) {
+        suggestionsContainer = document.createElement('div');
+        suggestionsContainer.id = 'suggestions-container';
+        searchInput.parentNode.insertBefore(suggestionsContainer, searchInput.nextSibling);
+    }
+
+    suggestionsContainer.innerHTML = ''; // مسح الاقتراحات القديمة
+
+    if (searchTerm.length === 0) {
+        suggestionsContainer.style.display = 'none'; // إخفاء الحاوية إذا كان حقل البحث فارغًا
+        return;
+    }
+
+    const filteredSuggestions = Array.from(allSearchableTerms).filter(term =>
+        term.startsWith(searchTerm)
+    ).slice(0, 5); // عرض 5 اقتراحات فقط
+
+    if (filteredSuggestions.length > 0) {
+        suggestionsContainer.style.display = 'block';
+        filteredSuggestions.forEach(suggestion => {
+            const suggestionItem = document.createElement('div');
+            suggestionItem.classList.add('suggestion-item');
+            suggestionItem.textContent = suggestion;
+            suggestionItem.addEventListener('click', () => {
+                searchInput.value = suggestion;
+                suggestionsContainer.style.display = 'none';
+                searchServices(); // قم بتشغيل البحث فورًا عند اختيار الاقتراح
+            });
+            suggestionsContainer.appendChild(suggestionItem);
+        });
+    } else {
+        suggestionsContainer.style.display = 'none';
+    }
+}
+
 
 async function loadMap() {
     map = L.map('map').setView([25.696, 32.664], 12);
@@ -418,6 +370,10 @@ async function loadMap() {
         const latlng = [coord[1], coord[0]];
         typesSet.add(type);
 
+        // أضف اسم الخدمة ونوعها إلى قائمة المصطلحات القابلة للبحث
+        allSearchableTerms.add(name.toLowerCase());
+        allSearchableTerms.add(type.toLowerCase());
+        
         const marker = L.marker(latlng, { icon: getServiceIcon(type) }).bindPopup(name);
         marker.on('click', function() {
             displayFeatureInfo(props, `معلومات الخدمة: ${name}`);
@@ -435,8 +391,11 @@ async function loadMap() {
 
     displayServicePoints('all');
 
-    typeSelect.addEventListener("change", () => {
+    // تم تعديل مستمع حدث "typeFilter" لكي لا يتعارض مع البحث
+    // اجعل هذا المستمع يستدعي displayServicePoints مباشرة
+    document.getElementById("typeFilter").addEventListener("change", () => {
         const selectedType = document.getElementById("typeFilter").value;
+        document.getElementById('searchInput').value = ''; // مسح حقل البحث عند تغيير الفلتر
         displayServicePoints(selectedType);
         if (userLat && userLng) {
             runRouting();
@@ -588,6 +547,38 @@ document.getElementById("locateBtn").addEventListener("click", () => {
         console.error("خطأ في تحديد الموقع:", error);
         document.getElementById('info').textContent = 'تعذر تحديد موقعك. يرجى التأكد من تفعيل خدمات الموقع.';
     });
+});
+
+// إضافة مستمعي الأحداث لزر البحث وحقل الإدخال عند تحميل DOM
+document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('searchBtn').addEventListener('click', searchServices);
+
+    const searchInput = document.getElementById('searchInput');
+    searchInput.addEventListener('input', updateSuggestions); // استدعاء الدالة عند كل تغيير في الإدخال
+
+    searchInput.addEventListener('keyup', (event) => {
+        if (event.key === 'Enter') {
+            searchServices();
+            document.getElementById('suggestions-container').style.display = 'none'; // إخفاء الاقتراحات بعد البحث
+        } else if (event.key === 'Escape' || searchInput.value === '') {
+            // إذا ضغط المستخدم على Esc أو مسح حقل البحث، أعد عرض جميع نقاط الخدمة
+            const typeFilterSelect = document.getElementById("typeFilter");
+            displayServicePoints(typeFilterSelect.value);
+            document.getElementById('info').textContent = 'جارٍ تحميل الخريطة...'; // أو رسالة افتراضية أخرى
+            routeLayer.clearLayers();
+            if (destinationMarker) map.removeLayer(destinationMarker);
+            document.getElementById('suggestions-container').style.display = 'none'; // إخفاء الاقتراحات عند مسح البحث أو Esc
+        }
+    });
+
+    // إضافة مستمع لغلق الاقتراحات عند النقر خارجها
+    document.addEventListener('click', (event) => {
+        const suggestionsContainer = document.getElementById('suggestions-container');
+        if (suggestionsContainer && !searchInput.contains(event.target) && !suggestionsContainer.contains(event.target)) {
+            suggestionsContainer.style.display = 'none';
+        }
+    });
+
 });
 
 
