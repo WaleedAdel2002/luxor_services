@@ -115,8 +115,8 @@ function formatTime(minutes) {
     return parts.join(" و ");
 }
 
-function formatDistance(km) {
-    const meters = Math.round(km * 1000);
+function formatDistance(metersInput) { // غيرنا اسم المتغير ليكون أوضح
+    const meters = Math.round(metersInput); // الآن هي قيمة بالمتر بالفعل، فقط نقوم بتقريبها
     const kmPart = Math.floor(meters / 1000);
     const mPart = meters % 1000;
     let parts = [];
