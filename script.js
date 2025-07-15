@@ -193,6 +193,8 @@ function searchServices() {
     const searchTerm = document.getElementById('searchInput').value.toLowerCase();
     servicePointsLayer.clearLayers(); // قم بمسح الطبقة الحالية من نقاط الخدمة
 
+    let foundMarkers = []; // لجمع العلامات التي تم العثور عليها
+
     servicePoints.forEach(s => {
         // ابحث في اسم الخدمة ونوعها
         const nameMatches = s.name.toLowerCase().includes(searchTerm);
@@ -200,6 +202,7 @@ function searchServices() {
 
         if (nameMatches || typeMatches) {
             s.marker.addTo(servicePointsLayer);
+            foundMarkers.push(s.marker); // أضف العلامة إلى قائمة النتائج
         }
     });
 
@@ -215,6 +218,18 @@ function searchServices() {
     // قم بتحديث معلومات الشريط الجانبي بناءً على نتائج البحث
     if (servicePointsLayer.getLayers().length > 0) {
         document.getElementById('info').innerHTML = `<h4>نتائج البحث:</h4><p>تم العثور على ${servicePointsLayer.getLayers().length} نقطة خدمة مطابقة لبحثك.</p>`;
+        
+        // ** إضافة جزء الزوم هنا **
+        const group = new L.featureGroup(foundMarkers);
+        map.fitBounds(group.getBounds(), { padding: [50, 50] }); // تكبير الخريطة لتناسب العلامات
+
+        // ** إضافة استدعاء runRouting هنا لتوليد المسار **
+        if (userLat && userLng) {
+            runRouting();
+        } else {
+            document.getElementById('info').innerHTML += '<br>الرجاء تحديد موقعك أولاً أو الضغط على "موقعي" لرسم المسار.';
+        }
+
     } else {
         document.getElementById('info').innerHTML = `<h4>نتائج البحث:</h4><p>لم يتم العثور على أي نقطة خدمة مطابقة لبحثك.</p>`;
     }
@@ -319,10 +334,12 @@ async function loadMap() {
     roadsData.features.forEach(f => {
         const coords = f.geometry.paths?.[0] || f.geometry.coordinates;
         const props = f.attributes || f.properties;
-        const totalTime = props.time || 1;
+        const totalTime = props.time || 1; // Assuming 'time' is driving time
+        const totaltime_Walking_ = props.time_Walking_ || (props.length / (5000 / 60)); // Calculate walking time if not provided, assuming 5 km/h = 5000m/60min
         const totalLength = props.length || 0;
         const segments = coords.length - 1;
         const perSegmentTime = totalTime / segments;
+        const perSegmentime_Walking_ = totaltime_Walking_ / segments;
         const perSegmentLength = totalLength / segments;
 
         const fclass = props.fclass || 'unknown';
@@ -347,8 +364,15 @@ async function loadMap() {
             const to = `${b[0]},${b[1]}`;
             if (!graph[from]) graph[from] = {};
             if (!graph[to]) graph[to] = {};
-            graph[from][to] = perSegmentTime;
-            graph[to][from] = perSegmentTime;
+            // Modified: Store an object with drivingTime and walkingTime
+            graph[from][to] = {
+                drivingTime: perSegmentTime,
+                walkingTime: perSegmentime_Walking_
+            };
+            graph[to][from] = { // Bidirectional
+                drivingTime: perSegmentTime,
+                walkingTime: perSegmentime_Walking_
+            };
             edgeLengths[`${from}_${to}`] = perSegmentLength;
             edgeLengths[`${to}_${from}`] = perSegmentLength;
         }
@@ -454,8 +478,17 @@ function runRouting() {
     }
 
     const selectedType = document.getElementById("typeFilter").value;
-    if (selectedType === "all") {
-        document.getElementById('info').textContent = 'الرجاء اختيار نوع خدمة محدد لتحديد أقرب نقطة.';
+    const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+
+    let effectiveFilterType = null;
+    let effectiveSearchTerm = null;
+
+    if (selectedType !== "all") {
+        effectiveFilterType = selectedType;
+    } else if (searchTerm) {
+        effectiveSearchTerm = searchTerm;
+    } else {
+        document.getElementById('info').textContent = 'الرجاء اختيار نوع خدمة محدد أو استخدام شريط البحث لتحديد أقرب نقطة.';
         routeLayer.clearLayers();
         if (destinationMarker) map.removeLayer(destinationMarker);
         return;
@@ -463,24 +496,54 @@ function runRouting() {
 
     const userNode = findClosestNode(userLng, userLat, Object.keys(graph));
 
-    let best = { dist: Infinity, length: 0, service: null, path: [] };
+    let best = { distDriving: Infinity, distWalking: Infinity, length: 0, service: null, path: [] };
 
     servicePoints.forEach(s => {
-        if (s.type !== selectedType) return;
+        let matchesFilter = false;
+        if (effectiveFilterType && s.type === effectiveFilterType) {
+            matchesFilter = true;
+        } else if (effectiveSearchTerm) {
+            const nameMatches = s.name.toLowerCase().includes(effectiveSearchTerm);
+            const typeMatches = s.type.toLowerCase().includes(effectiveSearchTerm);
+            matchesFilter = nameMatches || typeMatches;
+        }
+
+        if (!matchesFilter) return;
 
         const [lat, lng] = s.coord;
         const targetNode = findClosestNode(lng, lat, Object.keys(graph));
 
         try {
-            const path = dijkstra.find_path(graph, userNode, targetNode);
-            let totalTime = 0, totalLength = 0;
+            let drivingGraphForDijkstra = {};
+            for (const fromNode in graph) {
+                drivingGraphForDijkstra[fromNode] = {};
+                for (const toNode in graph[fromNode]) {
+                    drivingGraphForDijkstra[fromNode][toNode] = graph[fromNode][toNode].drivingTime;
+                }
+            }
+
+            const path = dijkstra.find_path(drivingGraphForDijkstra, userNode, targetNode);
+            
+            let totalDrivingTimeForPath = 0;
+            let totalWalkingTimeForPath = 0;
+            let totalLengthForPath = 0;
+
             for (let i = 0; i < path.length - 1; i++) {
                 const from = path[i], to = path[i + 1];
-                totalTime += graph[from][to];
-                totalLength += edgeLengths[`${from}_${to}`] || 0;
+                const segmentData = graph[from][to];
+                totalDrivingTimeForPath += segmentData.drivingTime;
+                totalWalkingTimeForPath += segmentData.walkingTime;
+                totalLengthForPath += edgeLengths[`${from}_${to}`] || 0;
             }
-            if (totalTime < best.dist) {
-                best = { dist: totalTime, length: totalLength, service: s, path };
+
+            if (totalDrivingTimeForPath < best.distDriving) {
+                best = {
+                    distDriving: totalDrivingTimeForPath,
+                    distWalking: totalWalkingTimeForPath,
+                    length: totalLengthForPath,
+                    service: s,
+                    path: path
+                };
             }
         } catch (e) {
             console.warn('لا يمكن الوصول إلى:', s.name, e);
@@ -488,7 +551,6 @@ function runRouting() {
     });
 
     routeLayer.clearLayers();
-
     if (destinationMarker) map.removeLayer(destinationMarker);
 
     if (best.path.length > 0) {
@@ -500,22 +562,26 @@ function runRouting() {
             .addTo(map)
             .bindPopup(`📌 ${best.service.name}`)
             .openPopup();
-
-        let stepsHtml = "<hr><b>تفاصيل المسار:</b><br>";
+        
+        let stepsHtml = "<hr><b></b><br>";
         for (let i = 0; i < best.path.length - 1; i++) {
             const from = best.path[i].split(',').map(Number).reverse();
             const to = best.path[i + 1].split(',').map(Number).reverse();
             const direction = getDirectionText(from, to);
             const dist = edgeLengths[`${best.path[i]}_${best.path[i + 1]}`] || 0;
-            const timeSegment = graph[best.path[i]][best.path[i+1]] || 0;
-            stepsHtml += `➡️ ${direction} لمسافة <b>${formatDistance(dist)}</b> في <b>${formatTime(timeSegment)}</b><br>`;
+            const segmentData = graph[best.path[i]][best.path[i+1]];
+            const timeSegmentDriving = segmentData.drivingTime || 0;
+            const timeSegmentWalking = segmentData.walkingTime || 0;
+
+            // stepsHtml += `➡️ ${direction} لمسافة <b>${formatDistance(dist)}</b> (قيادة: <b>${formatTime(timeSegmentDriving)}</b>, مشي: <b>${formatTime(timeSegmentWalking)}</b>)<br>`;
         }
-        stepsHtml += `✅ الوصول إلى: <b>${best.service.name}</b>`;
+        // stepsHtml += `✅ الوصول إلى: <b>${best.service.name}</b>`;
 
         document.getElementById('info').innerHTML = `
             أقرب نقطة: <b>${best.service.name}</b><br>
             نوع الخدمة: <b>${best.service.type}</b><br>
-            زمن الوصول التقريبي: <b>${formatTime(best.dist)}</b><br>
+            زمن الوصول التقريبي بالسيارة: <b>${formatTime(best.distDriving)}</b><br>
+            زمن الوصول التقريبي بالاقدام: <b>${formatTime(best.distWalking)}</b><br>
             المسافة التقريبية: <b>${formatDistance(best.length)}</b><br>
             ${stepsHtml}
         `;
