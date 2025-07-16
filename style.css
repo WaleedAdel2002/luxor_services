@@ -9,6 +9,9 @@
     line-height: 18px; /* لتحسين تباعد الأسطر */
     max-height: 300px; /* تحديد أقصى ارتفاع، يمكنك تعديل القيمة */
     overflow-y: auto; /* إضافة شريط تمرير عمودي عند الحاجة */
+    max-height: 300px;
+    overflow-y: auto;
+    z-index: 999; /* أضف هذا */
 }
 
 .info.legend h4 {
