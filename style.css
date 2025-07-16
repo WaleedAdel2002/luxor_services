@@ -17,7 +17,7 @@
 
 
     /* خصائص تخصيص شريط التمرير للمتصفحات الحديثة (Firefox) */
-    scrollbar-width: thin; /* 'auto' | 'thin' | 'none' */
+    scrollbar-width: auto; /* 'auto' | 'thin' | 'none' */
     scrollbar-color: #007bff #f1f1f1; /* لون مقبض شريط التمرير ثم لون المسار */
 }
 
