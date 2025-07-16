@@ -7,6 +7,8 @@
     box-shadow: 0 0 15px rgba(0,0,0,0.2);
     border-radius: 5px;
     line-height: 18px; /* لتحسين تباعد الأسطر */
+    overflow-y: auto; /* إضافة شريط تمرير عمودي عند الحاجة */
+
 }
 
 .info.legend h4 {
