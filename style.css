@@ -23,14 +23,14 @@
 
 /* خصائص تخصيص شريط التمرير للمتصفحات المستندة إلى WebKit (Chrome, Safari, Edge) */
 .info.legend::-webkit-scrollbar {
-    width: 12px; /* عرض شريط التمرير */
+    width: 50px; /* عرض شريط التمرير */
     background-color: #f1f1f1; /* لون خلفية شريط التمرير */
 }
 
 .info.legend::-webkit-scrollbar-thumb {
     background-color: #007bff; /* لون مقبض شريط التمرير (الجزء الذي يتحرك) */
     border-radius: 10px; /* تقويس زوايا مقبض شريط التمرير */
-    border: 1px solid #c0c0c0; /* حدود لمقبض شريط التمرير */
+    border: 10px solid #c0c0c0; /* حدود لمقبض شريط التمرير */
 }
 
 .info.legend::-webkit-scrollbar-track {
