@@ -775,5 +775,29 @@ function generateMapLegendControl() {
     };
     return legend;
 }
+// هذا الجزء يضاف بعد إنشاء وتهيئة مفتاح الخريطة في DOM
+document.addEventListener('DOMContentLoaded', function() {
+    var legendDiv = document.querySelector('.info.legend');
+    if (legendDiv) {
+        // منع انتشار أحداث النقر إلى الخريطة
+        L.DomEvent.disableClickPropagation(legendDiv);
+        // منع انتشار أحداث التمرير (عجلة الماوس) إلى الخريطة
+        L.DomEvent.disableScrollPropagation(legendDiv);
+        // منع Leaflet من إنهاء التفاعلات عندما يتم لمس العنصر (مهم جداً للمس)
+        L.DomEvent.disableMapTermination(legendDiv);
+
+        // إضافة مستمعين لأحداث اللمس لتمكين التمرير
+        // هذا يضمن أن المتصفح يعالج التمرير داخل العنصر
+        legendDiv.addEventListener('touchstart', function(e) {
+            e.stopPropagation(); // منع انتقال حدث اللمس إلى العناصر الأساسية
+        });
+        legendDiv.addEventListener('touchmove', function(e) {
+            e.stopPropagation(); // منع انتقال حدث اللمس إلى العناصر الأساسية
+        });
+        legendDiv.addEventListener('touchend', function(e) {
+            e.stopPropagation(); // منع انتقال حدث اللمس إلى العناصر الأساسية
+        });
+    }
+});
 
 loadMap();
