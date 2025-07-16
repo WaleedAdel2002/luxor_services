@@ -23,7 +23,7 @@
 
 /* خصائص تخصيص شريط التمرير للمتصفحات المستندة إلى WebKit (Chrome, Safari, Edge) */
 .info.legend::-webkit-scrollbar {
-    width: 20px; /* عرض شريط التمرير */
+    width: 12px; /* عرض شريط التمرير */
     background-color: #f1f1f1; /* لون خلفية شريط التمرير */
 }
 
