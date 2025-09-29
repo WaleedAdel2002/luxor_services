@@ -15,6 +15,29 @@ let borderLayer = L.layerGroup();
 let userMarker = null;
 let destinationMarker = null;
 
+// متغيرات جديدة لتخزين المسار الأقصر والخدمة النهائية
+let initialBestPath = []; 
+let destinationService = null; 
+
+// متغير لتتبع حالة العرض الحالية (0: الأقصر، 1-4: بدائل)
+let currentRouteIndex = 0; 
+
+// لتخزين نتائج المسارات البديلة (4 بدائل)
+let alternateRouteCache = {
+    1: null, 
+    2: null,
+    3: null, // المسار البديل الثالث
+    4: null  // المسار البديل الرابع
+};
+
+const ALTERNATE_COLORS = {
+    1: 'orange',
+    2: 'red',
+    3: 'purple',
+    4: 'green' 
+};
+
+
 // متغير جديد لجمع جميع المصطلحات الفريدة للبحث عنها كاقتراحات
 let allSearchableTerms = new Set();
 
@@ -188,42 +211,45 @@ function displayServicePoints(filterValue) {
     });
 }
 
-// دالة البحث عن الخدمات (مُعدلة لإخفاء الاقتراحات)
+// دالة البحث عن الخدمات (مُعدَّلة لإخفاء الاقتراحات وإعادة تعيين حالة المسار)
 function searchServices() {
     const searchTerm = document.getElementById('searchInput').value.toLowerCase();
-    servicePointsLayer.clearLayers(); // قم بمسح الطبقة الحالية من نقاط الخدمة
+    servicePointsLayer.clearLayers(); 
 
-    let foundMarkers = []; // لجمع العلامات التي تم العثور عليها
+    let foundMarkers = []; 
 
     servicePoints.forEach(s => {
-        // ابحث في اسم الخدمة ونوعها
         const nameMatches = s.name.toLowerCase().includes(searchTerm);
         const typeMatches = s.type.toLowerCase().includes(searchTerm);
 
         if (nameMatches || typeMatches) {
             s.marker.addTo(servicePointsLayer);
-            foundMarkers.push(s.marker); // أضف العلامة إلى قائمة النتائج
+            foundMarkers.push(s.marker); 
         }
     });
 
-    // إذا كان هناك بحث، قم بتحديث عنصر التحكم في التصفية ليُظهر "الكل" أو "نتائج البحث"
     const typeFilterSelect = document.getElementById('typeFilter');
     if (searchTerm) {
-        typeFilterSelect.value = "all"; // إعادة تعيين الفلتر إذا تم البحث
+        typeFilterSelect.value = "all"; 
     } else {
-        // إذا كان شريط البحث فارغاً، أعد عرض جميع النقاط بناءً على الفلتر الحالي
         displayServicePoints(typeFilterSelect.value);
     }
-
-    // قم بتحديث معلومات الشريط الجانبي بناءً على نتائج البحث
+    
+    // إعادة تعيين حالة المسار عند البحث الجديد
+    routeLayer.clearLayers(); 
+    if (destinationMarker) map.removeLayer(destinationMarker);
+    initialBestPath = [];
+    destinationService = null;
+    currentRouteIndex = 0;
+    alternateRouteCache = { 1: null, 2: null, 3: null, 4: null };
+    document.getElementById('findAlternateRouteBtn').style.display = 'none';
+    
     if (servicePointsLayer.getLayers().length > 0) {
         document.getElementById('info').innerHTML = `<h4>نتائج البحث:</h4><p>تم العثور على ${servicePointsLayer.getLayers().length} نقطة خدمة مطابقة لبحثك.</p>`;
         
-        // ** إضافة جزء الزوم هنا **
         const group = new L.featureGroup(foundMarkers);
-        map.fitBounds(group.getBounds(), { padding: [50, 50] }); // تكبير الخريطة لتناسب العلامات
+        map.fitBounds(group.getBounds(), { padding: [50, 50] }); 
 
-        // ** إضافة استدعاء runRouting هنا لتوليد المسار **
         if (userLat && userLng) {
             runRouting();
         } else {
@@ -233,10 +259,7 @@ function searchServices() {
     } else {
         document.getElementById('info').innerHTML = `<h4>نتائج البحث:</h4><p>لم يتم العثور على أي نقطة خدمة مطابقة لبحثك.</p>`;
     }
-    routeLayer.clearLayers(); // امسح أي مسار حالي
-    if (destinationMarker) map.removeLayer(destinationMarker);
 
-    // إخفاء الاقتراحات بعد إجراء البحث
     const suggestionsContainer = document.getElementById('suggestions-container');
     if (suggestionsContainer) {
         suggestionsContainer.style.display = 'none';
@@ -287,7 +310,7 @@ function updateSuggestions() {
 
 
 async function loadMap() {
-    map = L.map('map').setView([25.696, 32.664], 12);
+    map = L.map('map').setView([25.696, 32.664], 13);
 
     const osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
@@ -419,12 +442,20 @@ async function loadMap() {
         const selectedType = document.getElementById("typeFilter").value;
         document.getElementById('searchInput').value = ''; // مسح حقل البحث عند تغيير الفلتر
         displayServicePoints(selectedType);
+        
+        // إعادة تعيين حالة المسار عند تغيير الفلتر
+        routeLayer.clearLayers();
+        if (destinationMarker) map.removeLayer(destinationMarker);
+        initialBestPath = [];
+        destinationService = null;
+        currentRouteIndex = 0;
+        alternateRouteCache = { 1: null, 2: null, 3: null, 4: null };
+        document.getElementById('findAlternateRouteBtn').style.display = 'none';
+
         if (userLat && userLng) {
             runRouting();
         } else {
             document.getElementById('info').textContent = 'الرجاء تحديد موقعك أولاً أو الضغط على "موقعي".';
-            routeLayer.clearLayers();
-            if (destinationMarker) map.removeLayer(destinationMarker);
         }
     });
 
@@ -434,6 +465,94 @@ async function loadMap() {
     const mapLegendControl = generateMapLegendControl();
     mapLegendControl.addTo(map);
 }
+
+
+// ** دالة مساعدة جديدة لإنشاء الرسم البياني الموزون بزمن القيادة **
+function createDrivingGraph(baseGraph) {
+    let drivingGraph = {};
+    for (const fromNode in baseGraph) {
+        drivingGraph[fromNode] = {};
+        for (const toNode in baseGraph[fromNode]) {
+            drivingGraph[fromNode][toNode] = baseGraph[fromNode][toNode].drivingTime;
+        }
+    }
+    return drivingGraph;
+}
+
+
+// ** دالة مساعدة لـ Dijkstra (مُعدَّلة لحساب الزمن الحقيقي) **
+function findShortestPath(startNode, endNode, drivingGraphToUse) {
+    let shortestPath = null;
+    // تم إضافة متغيرين لحساب الزمن الحقيقي بغض النظر عن العقوبة
+    let totalDrivingTime = 0;
+    let totalDrivingTime_Penalty = 0; 
+    let totalWalkingTime = 0;
+    let totalLength = 0;
+
+    try {
+        // 1. استخدام مكتبة دايكسترا لإيجاد تسلسل العقد
+        const path = dijkstra.find_path(drivingGraphToUse, startNode, endNode);
+        
+        // 2. حساب إجمالي الوقت والمسافة للمسار الناتج
+        for (let i = 0; i < path.length - 1; i++) {
+            const from = path[i], to = path[i + 1];
+            
+            // الوزن الذي تم استخدامه في الخوارزمية (قد يكون به عقوبة)
+            totalDrivingTime_Penalty += drivingGraphToUse[from][to]; 
+            
+            // *** المفتاح: استخدام الرسم البياني الأصلي (graph) لحساب الزمن الحقيقي والمسافة ***
+            const segmentDataOriginal = graph[from][to];
+            totalDrivingTime += segmentDataOriginal.drivingTime; // الزمن الحقيقي
+            totalWalkingTime += segmentDataOriginal.walkingTime;
+            totalLength += edgeLengths[`${from}_${to}`] || 0;
+        }
+
+        shortestPath = path;
+
+    } catch (e) {
+        // المسار غير قابل للوصول
+        console.warn('لا يمكن الوصول من:', startNode, 'إلى:', endNode, e);
+    }
+    
+    // نُرجع totalDrivingTime (الزمن الحقيقي) للحسابات
+    return { path: shortestPath, distDriving: totalDrivingTime, distWalking: totalWalkingTime, length: totalLength, distDriving_Penalty: totalDrivingTime_Penalty };
+}
+
+
+// ** دالة جديدة لعرض نتائج التوجيه (مُعدّلة لحل مشكلة #info) **
+function displayRouteResult(routeData, color, title, isInitialRoute = false) {
+    const latlngs = routeData.path.map(str => str.split(',').reverse().map(Number));
+    
+    routeLayer.clearLayers(); 
+    if (destinationMarker) map.removeLayer(destinationMarker); 
+
+    L.polyline(latlngs, { color: color, weight: 5, opacity: 0.8 }).addTo(routeLayer);
+    map.fitBounds(latlngs, { padding: [50, 50] });
+
+    if (routeData.service) { 
+        destinationMarker = L.marker(routeData.service.coord, { icon: getServiceIcon(routeData.service.type) })
+            .addTo(map)
+            .bindPopup(`📌 ${routeData.service.name}`)
+            .openPopup();
+    }
+    
+    let timeNote = '';
+    // ملاحظة: في المسار البديل، لا نحتاج لتحذير حول "الأوقات المبالغ فيها" لأننا الآن نعرض الزمن الحقيقي
+    if (!isInitialRoute && color !== 'blue') {
+        // إذا كان مساراً بديلاً، نذكر أنه أطول زمنياً من الافتراضي
+        timeNote = ' (يجب أن يكون المسار أطول زمنياً من المسار الأقصر)';
+    }
+
+
+    document.getElementById('info').innerHTML = `
+        <h4>${title}: <b>${routeData.service.name}</b></h4>
+        نوع الخدمة: <b>${routeData.service.type}</b><br>
+        زمن الوصول التقريبي بالسيارة: <b>${formatTime(routeData.distDriving)}</b>${timeNote}<br>
+        زمن الوصول التقريبي بالاقدام: <b>${formatTime(routeData.distWalking)}</b><br>
+        المسافة التقريبية: <b>${formatDistance(routeData.length)}</b>
+    `;
+}
+
 
 function setupLayerControls() {
     document.getElementById('toggleRoads').addEventListener('change', function() {
@@ -474,6 +593,11 @@ function runRouting() {
         document.getElementById('info').textContent = 'الرجاء تحديد موقعك أولاً.';
         routeLayer.clearLayers();
         if (destinationMarker) map.removeLayer(destinationMarker);
+        initialBestPath = [];
+        destinationService = null;
+        currentRouteIndex = 0;
+        alternateRouteCache = { 1: null, 2: null, 3: null, 4: null };
+        document.getElementById('findAlternateRouteBtn').style.display = 'none';
         return;
     }
 
@@ -491,12 +615,21 @@ function runRouting() {
         document.getElementById('info').textContent = 'الرجاء اختيار نوع خدمة محدد أو استخدام شريط البحث لتحديد أقرب نقطة.';
         routeLayer.clearLayers();
         if (destinationMarker) map.removeLayer(destinationMarker);
+        initialBestPath = [];
+        destinationService = null;
+        currentRouteIndex = 0;
+        alternateRouteCache = { 1: null, 2: null, 3: null, 4: null };
+        document.getElementById('findAlternateRouteBtn').style.display = 'none';
         return;
     }
 
     const userNode = findClosestNode(userLng, userLat, Object.keys(graph));
 
-    let best = { distDriving: Infinity, distWalking: Infinity, length: 0, service: null, path: [] };
+    let best = { distDriving: Infinity, service: null, path: [] };
+
+    // ** استخدام الدالة المساعدة لإنشاء الرسم البياني الموزون بالوقت **
+    const drivingGraphForDijkstra = createDrivingGraph(graph);
+
 
     servicePoints.forEach(s => {
         let matchesFilter = false;
@@ -513,82 +646,152 @@ function runRouting() {
         const [lat, lng] = s.coord;
         const targetNode = findClosestNode(lng, lat, Object.keys(graph));
 
-        try {
-            let drivingGraphForDijkstra = {};
-            for (const fromNode in graph) {
-                drivingGraphForDijkstra[fromNode] = {};
-                for (const toNode in graph[fromNode]) {
-                    drivingGraphForDijkstra[fromNode][toNode] = graph[fromNode][toNode].drivingTime;
-                }
-            }
+        // استخدام الدالة المساعدة
+        const result = findShortestPath(userNode, targetNode, drivingGraphForDijkstra);
 
-            const path = dijkstra.find_path(drivingGraphForDijkstra, userNode, targetNode);
-            
-            let totalDrivingTimeForPath = 0;
-            let totalWalkingTimeForPath = 0;
-            let totalLengthForPath = 0;
 
-            for (let i = 0; i < path.length - 1; i++) {
-                const from = path[i], to = path[i + 1];
-                const segmentData = graph[from][to];
-                totalDrivingTimeForPath += segmentData.drivingTime;
-                totalWalkingTimeForPath += segmentData.walkingTime;
-                totalLengthForPath += edgeLengths[`${from}_${to}`] || 0;
-            }
-
-            if (totalDrivingTimeForPath < best.distDriving) {
-                best = {
-                    distDriving: totalDrivingTimeForPath,
-                    distWalking: totalWalkingTimeForPath,
-                    length: totalLengthForPath,
-                    service: s,
-                    path: path
-                };
-            }
-        } catch (e) {
-            console.warn('لا يمكن الوصول إلى:', s.name, e);
+        if (result.path && result.distDriving < best.distDriving) {
+            best = {
+                distDriving: result.distDriving,
+                distWalking: result.distWalking,
+                length: result.length,
+                service: s,
+                path: result.path
+            };
         }
     });
 
-    routeLayer.clearLayers();
-    if (destinationMarker) map.removeLayer(destinationMarker);
-
     if (best.path.length > 0) {
-        const latlngs = best.path.map(str => str.split(',').reverse().map(Number));
-        L.polyline(latlngs, { color: 'blue' }).addTo(routeLayer);
-        map.fitBounds(latlngs, { padding: [50, 50] });
-
-        destinationMarker = L.marker(best.service.coord, { icon: getServiceIcon(best.service.type) })
-            .addTo(map)
-            .bindPopup(`📌 ${best.service.name}`)
-            .openPopup();
+        initialBestPath = best.path; 
+        destinationService = best.service; 
         
-        let stepsHtml = "<hr><b></b><br>";
-        for (let i = 0; i < best.path.length - 1; i++) {
-            const from = best.path[i].split(',').map(Number).reverse();
-            const to = best.path[i + 1].split(',').map(Number).reverse();
-            const direction = getDirectionText(from, to);
-            const dist = edgeLengths[`${best.path[i]}_${best.path[i + 1]}`] || 0;
-            const segmentData = graph[best.path[i]][best.path[i+1]];
-            const timeSegmentDriving = segmentData.drivingTime || 0;
-            const timeSegmentWalking = segmentData.walkingTime || 0;
+        // إعادة تعيين حالة المسار البديل وتخزين المسار الأقصر
+        currentRouteIndex = 0; 
+        alternateRouteCache = { 1: null, 2: null, 3: null, 4: null };
+        
+        displayRouteResult(best, 'blue', 'المسار الأقصر (الافتراضي)', true);
+        document.getElementById('findAlternateRouteBtn').style.display = 'block'; 
 
-            // stepsHtml += `➡️ ${direction} لمسافة <b>${formatDistance(dist)}</b> (قيادة: <b>${formatTime(timeSegmentDriving)}</b>, مشي: <b>${formatTime(timeSegmentWalking)}</b>)<br>`;
-        }
-        // stepsHtml += `✅ الوصول إلى: <b>${best.service.name}</b>`;
-
-        document.getElementById('info').innerHTML = `
-            أقرب نقطة: <b>${best.service.name}</b><br>
-            نوع الخدمة: <b>${best.service.type}</b><br>
-            زمن الوصول التقريبي بالسيارة: <b>${formatTime(best.distDriving)}</b><br>
-            زمن الوصول التقريبي بالاقدام: <b>${formatTime(best.distWalking)}</b><br>
-            المسافة التقريبية: <b>${formatDistance(best.length)}</b><br>
-            ${stepsHtml}
-        `;
     } else {
         document.getElementById('info').textContent = 'لم يتم العثور على مسار مناسب لنوع الخدمة المحدد من موقعك الحالي.';
+        initialBestPath = [];
+        destinationService = null;
+        currentRouteIndex = 0;
+        alternateRouteCache = { 1: null, 2: null, 3: null, 4: null };
+        document.getElementById('findAlternateRouteBtn').style.display = 'none';
     }
 }
+
+
+// ** دالة موحدة لحساب وعرض أي مسار بديل **
+function calculateAndDisplayAlternate(alternateNum) {
+    if (!initialBestPath || !destinationService) return;
+
+    if (alternateRouteCache[alternateNum]) {
+        // إذا كان مخزناً، اعرضه فوراً
+        const cache = alternateRouteCache[alternateNum];
+        displayRouteResult(cache, cache.color, `مسار بديل ${alternateNum}`, false); 
+        return;
+    }
+
+    // **************** منطق الحساب الفعلي ****************
+    
+    const userNode = findClosestNode(userLng, userLat, Object.keys(graph));
+    const [lat, lng] = destinationService.coord;
+    const targetNode = findClosestNode(lng, lat, Object.keys(graph));
+
+    // 1. إنشاء نسخة من الرسم البياني الأصلي لتطبيق العقوبة عليها
+    let alternateGraph = JSON.parse(JSON.stringify(graph)); 
+    const PENALTY = 1000; 
+
+    // 2. تطبيق العقوبة على المسارات السابقة
+    let pathsToPenalize = [initialBestPath]; // المسار الأقصر يعاقب دائماً
+    
+    // إضافة جميع المسارات البديلة التي تم حسابها مسبقاً للعقوبة
+    for (let i = 1; i < alternateNum; i++) {
+        if (alternateRouteCache[i]) {
+            pathsToPenalize.push(alternateRouteCache[i].path);
+        }
+    }
+    
+    // تطبيق العقوبة
+    pathsToPenalize.forEach(path => {
+        for (let i = 0; i < path.length - 1; i++) {
+            const from = path[i];
+            const to = path[i + 1];
+            
+            // زيادة الوزن في كلا الاتجاهين
+            if (alternateGraph[from] && alternateGraph[from][to]) {
+                alternateGraph[from][to].drivingTime += PENALTY;
+            }
+            if (alternateGraph[to] && alternateGraph[to][from]) {
+                alternateGraph[to][from].drivingTime += PENALTY;
+            }
+        }
+    });
+
+    // 3. تجهيز الرسم البياني الجديد لدايكسترا بعد تطبيق العقوبة
+    const drivingAlternateGraphForDijkstra = createDrivingGraph(alternateGraph);
+
+    // 4. إيجاد المسار البديل
+    // سيجد المسار الأقصر في الرسم البياني المعاقب، ولكنه سيعيد الزمن الحقيقي
+    const alternateResult = findShortestPath(userNode, targetNode, drivingAlternateGraphForDijkstra);
+    
+    if (alternateResult.path && alternateResult.path.length > 0) {
+        
+        // جلب بيانات المسار الأقصر الأصلي لإعادة العرض لاحقًا
+        const drivingGraphForDijkstra = createDrivingGraph(graph);
+        const currentBest = findShortestPath(userNode, targetNode, drivingGraphForDijkstra);
+
+        // تخزين البيانات في الذاكرة المؤقتة
+        const color = ALTERNATE_COLORS[alternateNum] || 'gray'; // استخدام الألوان المحددة
+        alternateRouteCache[alternateNum] = { 
+            ...alternateResult, 
+            service: destinationService,
+            color: color,
+            initialDistDriving: currentBest.distDriving, 
+            initialDistWalking: currentBest.distWalking, 
+            initialLength: currentBest.length
+        };
+
+        // تغيير عنوان العرض هنا
+        displayRouteResult(alternateRouteCache[alternateNum], color, `مسار بديل ${alternateNum}`, false);
+
+    } else {
+        document.getElementById('info').textContent = `تعذر العثور على المسار البديل ${alternateNum} المتاح.`;
+    }
+}
+
+
+// ** الدالة الجديدة للتبديل بين المسارات الخمسة (Toggle) **
+function toggleNextRoute() {
+    if (!initialBestPath || !destinationService) {
+        document.getElementById('info').textContent = 'الرجاء تحديد موقعك والبحث عن أقرب خدمة أولاً.';
+        return;
+    }
+
+    // 1. حساب حالة العرض التالية (5 حالات: 0-4)
+    currentRouteIndex = (currentRouteIndex + 1) % 5; 
+
+    // 2. تحديث العرض حسب الحالة الجديدة
+    if (currentRouteIndex === 0) {
+        // الحالة 0: العودة إلى المسار الأقصر
+        // نستخدم بيانات المسار البديل الأول المخزنة كمرجع للزمن الأقصر الحقيقي
+        const best = { 
+            distDriving: alternateRouteCache[1]?.initialDistDriving || 0,
+            distWalking: alternateRouteCache[1]?.initialDistWalking || 0,
+            length: alternateRouteCache[1]?.initialLength || 0,
+            service: destinationService, 
+            path: initialBestPath 
+        };
+        displayRouteResult(best, 'blue', 'المسار الأقصر (الافتراضي)', true);
+        
+    } else {
+        // الحالات 1 إلى 4: حساب وعرض المسار البديل N
+        calculateAndDisplayAlternate(currentRouteIndex);
+    }
+}
+
 
 document.getElementById("locateBtn").addEventListener("click", () => {
     document.getElementById('info').textContent = 'جارٍ تحديد موقعك...';
@@ -616,6 +819,10 @@ document.getElementById("locateBtn").addEventListener("click", () => {
 // إضافة مستمعي الأحداث لزر البحث وحقل الإدخال عند تحميل DOM
 document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('searchBtn').addEventListener('click', searchServices);
+    
+    // **ربط زر المسار البديل بالدالة الجديدة للتبديل**
+    document.getElementById('findAlternateRouteBtn').addEventListener('click', toggleNextRoute);
+
 
     const searchInput = document.getElementById('searchInput');
     searchInput.addEventListener('input', updateSuggestions); // استدعاء الدالة عند كل تغيير في الإدخال
@@ -635,6 +842,11 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('info').textContent = 'جارٍ تحميل الخريطة...'; // أو رسالة افتراضية أخرى
             routeLayer.clearLayers();
             if (destinationMarker) map.removeLayer(destinationMarker);
+            initialBestPath = [];
+            destinationService = null;
+            currentRouteIndex = 0;
+            alternateRouteCache = { 1: null, 2: null, 3: null, 4: null };
+            document.getElementById('findAlternateRouteBtn').style.display = 'none';
             // إخفاء الاقتراحات عند مسح البحث أو Esc
             const suggestionsContainer = document.getElementById('suggestions-container');
             if (suggestionsContainer) {
@@ -770,34 +982,36 @@ function generateMapLegendControl() {
                 <span>حدود المنطقة</span>
             </div>
         `;
+        
+        // مفتاح المسار البديل (5 مسارات)
+        div.innerHTML += '<h5>المسارات:</h5>';
+        div.innerHTML += `
+            <div class="legend-item">
+                <div class="legend-color-box" style="background-color: blue;"></div>
+                <span>المسار الأقصر (الافتراضي)</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color-box" style="background-color: ${ALTERNATE_COLORS[1]};"></div>
+                <span>المسار البديل 1</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color-box" style="background-color: ${ALTERNATE_COLORS[2]};"></div>
+                <span>المسار البديل 2</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color-box" style="background-color: ${ALTERNATE_COLORS[3]};"></div>
+                <span>المسار البديل 3</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color-box" style="background-color: ${ALTERNATE_COLORS[4]};"></div>
+                <span>المسار البديل 4</span>
+            </div>
+        `;
+
 
         return div;
     };
     return legend;
 }
-// هذا الجزء يضاف بعد إنشاء وتهيئة مفتاح الخريطة في DOM
-document.addEventListener('DOMContentLoaded', function() {
-    var legendDiv = document.querySelector('.info.legend');
-    if (legendDiv) {
-        // منع انتشار أحداث النقر إلى الخريطة
-        L.DomEvent.disableClickPropagation(legendDiv);
-        // منع انتشار أحداث التمرير (عجلة الماوس) إلى الخريطة
-        L.DomEvent.disableScrollPropagation(legendDiv);
-        // منع Leaflet من إنهاء التفاعلات عندما يتم لمس العنصر (مهم جداً للمس)
-        L.DomEvent.disableMapTermination(legendDiv);
-
-        // إضافة مستمعين لأحداث اللمس لتمكين التمرير
-        // هذا يضمن أن المتصفح يعالج التمرير داخل العنصر
-        legendDiv.addEventListener('touchstart', function(e) {
-            e.stopPropagation(); // منع انتقال حدث اللمس إلى العناصر الأساسية
-        });
-        legendDiv.addEventListener('touchmove', function(e) {
-            e.stopPropagation(); // منع انتقال حدث اللمس إلى العناصر الأساسية
-        });
-        legendDiv.addEventListener('touchend', function(e) {
-            e.stopPropagation(); // منع انتقال حدث اللمس إلى العناصر الأساسية
-        });
-    }
-});
 
 loadMap();

@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Waleed Adel Salah | Demonstrator Portfolio</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        'gis-blue': '#2563EB',      /* Primary Blue */
+                        'gis-dark': '#0F172A',      /* Slate 900 */
+                        'gis-light': '#F1F5F9',     /* Slate 100 */
+                        'gis-secondary': '#1E293B', /* Slate 800 */
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Custom styles for professional look */
+        .skill-bar {
+            background-color: #CBD5E1; /* Slate 300 */
+            border-radius: 9999px;
+            overflow: hidden;
+            height: 12px;
+            margin-top: 8px;
+        }
+        .skill-level {
+            height: 100%;
+            background-color: #2563EB; /* gis-blue */
+            transition: width 1s ease-out;
+        }
+    </style>
+</head>
+
+<body class="bg-gis-light text-gis-dark font-sans">
+
+    <!-- Sticky Header/Navigation -->
+    <nav class="sticky top-0 z-50 bg-white/95 backdrop-blur shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <!-- Name & Title -->
+                <a href="#" class="text-xl font-bold text-gis-dark tracking-wide">Waleed Adel Salah</a>
+                <!-- Navigation Links -->
+                <div class="flex space-x-4">
+                    <a href="#projects" class="text-gray-600 hover:text-gis-blue transition duration-200 p-2 rounded-lg font-medium">Projects</a>
+                    <a href="#skills" class="text-gray-600 hover:text-gis-blue transition duration-200 p-2 rounded-lg font-medium">Skills</a>
+                    <a href="#contact" class="bg-gis-blue text-white px-4 py-2 rounded-xl font-medium hover:bg-blue-600 transition duration-200 shadow-md">Contact</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 pb-20">
+
+        <!-- Hero/Summary Section -->
+        <header class="flex flex-col md:flex-row items-center md:items-start gap-8 py-10 border-b border-gray-300">
+            <!-- Profile Image -->
+            <div class="w-40 h-40 flex-shrink-0 bg-gray-200 rounded-full overflow-hidden shadow-2xl">
+                <!-- Profile picture inserted using Base64 data from cv.jpg -->
+                <img id="profile-pic" 
+                     <img src="images\cv.jpg" alt="صورة" class="header-logo">
+            </div>
+
+            <div class="md:text-left text-center">
+                <h1 class="text-4xl sm:text-5xl font-extrabold text-gis-dark mb-1">
+                    Waleed Adel Salah Abd ElGhaffar
+                </h1>
+                <h2 class="text-2xl font-semibold text-gis-blue mb-4">
+                    Demonstrator 
+                </h2>
+                <!-- Objective/Summary from CV -->
+                <p class="text-gray-700 leading-relaxed max-w-3xl">
+                    I am a Demonstrator at South Valley University, leveraging my Excellent with Honors Grade education in Surveying, Maps, and GIS. My experience spans advanced spatial analysis, remote sensing, and technical instruction, focusing on applying academic knowledge to real-world government and educational initiatives.
+                </p>
+                
+                <!-- Contact Bar -->
+                <div class="mt-6 flex flex-wrap justify-center md:justify-start gap-4 text-sm text-gray-600">
+                    <span class="flex items-center">
+                        <svg class="w-5 h-5 mr-1 text-gis-blue" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+                        waleedadel@art.svu.edu.eg
+                    </span>
+                    <a href="https://wa.me/+201092171931" target="_blank" class="flex items-center hover:text-gis-blue transition duration-200">
+                        <svg class="w-5 h-5 mr-1 text-gis-blue" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path></svg>
+                        +20 1092171931
+                    </a>
+                    <a href="https://www.linkedin.com/in/waleed-adel-w962002" target="_blank" class="flex items-center hover:text-gis-blue transition duration-200">
+                        <svg class="w-5 h-5 mr-1 text-gis-blue" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.507-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"></path></svg>
+                        LinkedIn Profile
+                    </a>
+                </div>
+            </div>
+        </header>
+
+        <!-- Projects Section -->
+        <section id="projects" class="py-16">
+            <h2 class="text-3xl font-bold text-gis-dark mb-8 border-b-2 border-gis-blue pb-2">Experience & Key Projects</h2>
+            
+            <div class="space-y-10">
+
+                <!-- New Role: Demonstrator -->
+                <div class="p-6 bg-white rounded-xl shadow-lg hover:shadow-xl transition duration-300 border-l-4 border-green-500">
+                    <h3 class="text-xl font-semibold text-green-600 mb-2">Demonstrator (5/2025 - Present)</h3>
+                    <p class="text-lg font-medium text-gray-800 mb-2">Faculty of Arts - South Valley University</p>
+                    <ul class="list-disc list-inside text-gray-700 space-y-1 ml-4">
+                        <li>Providing academic support and instruction in Surveying, Maps, and GIS to university students.</li>
+                        <li>Engaging in departmental research and pedagogical development.</li>
+                    </ul>
+                </div>
+
+                <!-- Previous Role: GIS Specialist -->
+                <div class="p-6 bg-white rounded-xl shadow-lg hover:shadow-xl transition duration-300 border-l-4 border-gis-blue">
+                    <h3 class="text-xl font-semibold text-gis-blue mb-2">GIS Specialist (8/2024 - 5/2025)</h3>
+                    <p class="text-lg font-medium text-gray-800 mb-2">Qena Governorate Office</p>
+                    <ul class="list-disc list-inside text-gray-700 space-y-1 ml-4">
+                        <li>Applied advanced GIS techniques to local government data, supporting urban planning and resource management.</li>
+                        <li>Contributed to real-world spatial analysis projects for the governorate.</li>
+                    </ul>
+                </div>
+                
+                <h3 class="text-2xl font-bold text-gray-700 mt-10">Academic & Technical Projects</h3>
+
+                <!-- Project 1: Urban Expansion & Remote Sensing Study -->
+                <div class="p-6 bg-white rounded-xl shadow-lg hover:shadow-xl transition duration-300 border-l-4 border-gray-400">
+                    <h4 class="text-xl font-semibold text-gray-700 mb-2">Urban Expansion and Agricultural Impact Study (2000-2023)</h4>
+                    <ul class="list-disc list-inside text-gray-700 space-y-1 ml-4">
+                        <li>Conducted a comparative analysis of urban expansion using **GIS and remote sensing** (Waqf Center, Qena).</li>
+                        <li>Assessed the impact of desert-back urbanization on agricultural lands using multi-temporal image analysis.</li>
+                    </ul>
+                </div>
+
+                <!-- Project 2: Change Detection Analysis -->
+                <div class="p-6 bg-white rounded-xl shadow-lg hover:shadow-xl transition duration-300 border-l-4 border-gray-400">
+                    <h4 class="text-xl font-semibold text-gray-700 mb-2">Long-Term Change Detection (1975-2023)</h4>
+                    <ul class="list-disc list-inside text-gray-700 space-y-1 ml-4">
+                        <li>Performed **Change Detection** analysis over a nearly 50-year period for Qena and Luxor Governorates.</li>
+                        <li>Utilized satellite imagery to quantify significant spatial changes in the region.</li>
+                    </ul>
+                </div>
+
+                <!-- Other Projects Card -->
+                <div class="p-6 bg-gis-secondary text-white rounded-xl shadow-lg">
+                    <h4 class="text-xl font-semibold text-gis-light mb-2">Surveying & Cartography Portfolio</h4>
+                    <ul class="list-disc list-inside space-y-1 ml-4">
+                        <li>Developed a **Network Analysis** dataset to measure distances from South Valley University to all villages/cities in Egypt.</li>
+                        <li>Created a **Cartographic Atlas of Sinai** (2024) and a **Topographic Map of Luxor** (scale 1:50,000).</li>
+                        <li>Practical surveying: Drawing, tuning the Traverse, and signing a school.</li>
+                    </ul>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- Skills Section -->
+        <section id="skills" class="py-16 border-t border-gray-300 mt-10">
+            <h2 class="text-3xl font-bold text-gis-dark mb-8 border-b-2 border-gis-blue pb-2">Technical & Soft Skills</h2>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-10">
+                <!-- Technical Skills -->
+                <div>
+                    <h3 class="text-2xl font-semibold text-gray-800 mb-4">Software Proficiency</h3>
+                    <div class="space-y-4">
+                        <!-- Skill 1: ArcGIS (Desktop, Pro, Online) -->
+                        <div>
+                            <p class="font-medium">ArcGIS Suite (Desktop, Pro, Online)</p>
+                            <div class="skill-bar"><div class="skill-level" style="width: 95%;"></div></div>
+                        </div>
+                        <!-- Skill 2: Remote Sensing & Web Dev (New) -->
+                        <div>
+                            <p class="font-medium">Remote Sensing (Erdas Imagine, Envi, GEE) & Web (HTML, CSS)</p>
+                            <div class="skill-bar"><div class="skill-level" style="width: 90%;"></div></div>
+                        </div>
+                        <!-- Skill 3: Open Source GIS & Databases -->
+                        <div>
+                            <p class="font-medium">QGIS & Postgre SQL</p>
+                            <div class="skill-bar"><div class="skill-level" style="width: 80%;"></div></div>
+                        </div>
+                         <!-- Skill 4: CAD & Design -->
+                        <div>
+                            <p class="font-medium">AutoCAD Civil 3D, SketchUp, Photoshop</p>
+                            <div class="skill-bar"><div class="skill-level" style="width: 75%;"></div></div>
+                        </div>
+                        <!-- Skill 5: Programming & Tools -->
+                        <div>
+                            <p class="font-medium">Python, Microsoft Office</p>
+                            <div class="skill-bar"><div class="skill-level" style="width: 70%;"></div></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Personal Skills & Education -->
+                <div>
+                    <h3 class="text-2xl font-semibold text-gray-800 mb-4">Core Competencies</h3>
+                    
+                    <div class="bg-white p-6 rounded-xl shadow-md mb-6">
+                        <h4 class="text-xl font-semibold text-gis-blue mb-3">Education</h4>
+                        <p class="font-medium text-gray-800">Bachelor's Degree in Surveying, Maps and GIS</p>
+                        <p class="text-gray-600">South Valley University | **Graduation Year: 2024**</p>
+                        <p class="text-gis-blue font-bold">Grade: Excellent with Honor's Grade</p>
+                    </div>
+
+                    <h4 class="text-xl font-semibold text-gray-800 mb-3">Personal & Language Skills</h4>
+                    <div class="flex flex-wrap gap-2">
+                        <span class="bg-gis-blue/10 text-gis-blue px-3 py-1 rounded-full text-sm font-medium">Strong Analytical Skills</span>
+                        <span class="bg-gis-blue/10 text-gis-blue px-3 py-1 rounded-full text-sm font-medium">Problem Solving</span>
+                        <span class="bg-gis-blue/10 text-gis-blue px-3 py-1 rounded-full text-sm font-medium">Communication Skills</span>
+                        <span class="bg-gis-blue/10 text-gis-blue px-3 py-1 rounded-full text-sm font-medium">Ability to work under pressure</span>
+                        <span class="bg-gis-blue/10 text-gis-blue px-3 py-1 rounded-full text-sm font-medium">Strong Motivation</span>
+                        <span class="bg-gray-300 text-gray-700 px-3 py-1 rounded-full text-sm font-medium">Arabic (Native)</span>
+                        <span class="bg-gray-300 text-gray-700 px-3 py-1 rounded-full text-sm font-medium">English (Very Good)</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Contact Form (Simple Placeholder) -->
+        <section id="contact" class="py-16 border-t border-gray-300 mt-10 text-center bg-white rounded-xl shadow-xl p-8">
+            <h2 class="text-3xl font-bold mb-4 text-gis-dark">Let's Connect</h2>
+            <p class="text-lg text-gray-600 mb-8">I'm available for new opportunities and project discussions.</p>
+            
+            <form class="max-w-lg mx-auto space-y-4">
+                <input type="text" placeholder="Your Name" required
+                       class="w-full p-3 bg-gis-light rounded-lg border border-gray-300 focus:border-gis-blue focus:ring focus:ring-gis-blue/50 text-gray-800 placeholder-gray-500">
+                <input type="email" placeholder="Your Email" required
+                       class="w-full p-3 bg-gis-light rounded-lg border border-gray-300 focus:border-gis-blue focus:ring focus:ring-gis-blue/50 text-gray-800 placeholder-gray-500">
+                <textarea placeholder="Message about the opportunity or project..." rows="4" required
+                          class="w-full p-3 bg-gis-light rounded-lg border border-gray-300 focus:border-gis-blue focus:ring focus:ring-gis-blue/50 text-gray-800 placeholder-gray-500"></textarea>
+                <button type="submit"
+                        class="w-full bg-gis-blue text-white p-3 rounded-lg font-bold text-lg hover:bg-blue-600 transition duration-300 shadow-lg">
+                    Send Inquiry
+                </button>
+            </form>
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-gis-dark py-6">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-gray-400">
+            <p>&copy; 2024 Waleed Adel Salah. Demonstrator | GIS Specialist.</p>
+            <p class="mt-2 text-sm">Elwaqf, Qena, Egypt</p>
+        </div>
+    </footer>
+</body>
+</html>
