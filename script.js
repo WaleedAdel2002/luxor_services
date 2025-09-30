@@ -540,7 +540,7 @@ function displayRouteResult(routeData, color, title, isInitialRoute = false) {
     // ملاحظة: في المسار البديل، لا نحتاج لتحذير حول "الأوقات المبالغ فيها" لأننا الآن نعرض الزمن الحقيقي
     if (!isInitialRoute && color !== 'blue') {
         // إذا كان مساراً بديلاً، نذكر أنه أطول زمنياً من الافتراضي
-        timeNote = ' (يجب أن يكون المسار أطول زمنياً من المسار الأقصر)';
+        timeNote = ' ';
     }
 
 
@@ -669,7 +669,7 @@ function runRouting() {
         currentRouteIndex = 0; 
         alternateRouteCache = { 1: null, 2: null, 3: null, 4: null };
         
-        displayRouteResult(best, 'blue', 'المسار الأقصر (الافتراضي)', true);
+        displayRouteResult(best, 'blue', 'أقصر مسار(الافتراضي)', true);
         document.getElementById('findAlternateRouteBtn').style.display = 'block'; 
 
     } else {
@@ -784,7 +784,7 @@ function toggleNextRoute() {
             service: destinationService, 
             path: initialBestPath 
         };
-        displayRouteResult(best, 'blue', 'المسار الأقصر (الافتراضي)', true);
+        displayRouteResult(best, 'blue', 'أقصر مسار (الافتراضي)', true);
         
     } else {
         // الحالات 1 إلى 4: حساب وعرض المسار البديل N
@@ -988,7 +988,7 @@ function generateMapLegendControl() {
         div.innerHTML += `
             <div class="legend-item">
                 <div class="legend-color-box" style="background-color: blue;"></div>
-                <span>المسار الأقصر (الافتراضي)</span>
+                <span>أقصر مسار (الافتراضي)</span>
             </div>
             <div class="legend-item">
                 <div class="legend-color-box" style="background-color: ${ALTERNATE_COLORS[1]};"></div>
